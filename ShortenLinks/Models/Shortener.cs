@@ -37,8 +37,7 @@ namespace ShortenLinks.Models
 			{
 				Token = Token,
 				URL = url,
-				ShortenedURL = Token;
-
+				ShortenedURL = Properties.Resources.ResourceManager.GetString("base_url")
 			};
 		}
 	}
