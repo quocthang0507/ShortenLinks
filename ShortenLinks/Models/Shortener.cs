@@ -37,8 +37,11 @@ namespace ShortenLinks.Models
 			{
 				Token = Token,
 				URL = url,
-				ShortenedURL = Properties.Resources.ResourceManager.GetString("base_url")
+				ShortenedURL = Properties.Resources.ResourceManager.GetString("base_url") + Token
 			};
+			if (urls.Exists(u => u.URL == url))
+				throw new Exception("URL already exists");
+			urls.Insert(biturl);
 		}
 	}
 }
