@@ -1,5 +1,3 @@
-using System;
-
 namespace ShortenLinks.Models
 {
 	public class ErrorViewModel

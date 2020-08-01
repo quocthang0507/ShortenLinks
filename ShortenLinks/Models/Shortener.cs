@@ -1,9 +1,6 @@
 ﻿using LiteDB;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Policy;
-using System.Threading.Tasks;
 
 namespace ShortenLinks.Models
 {
@@ -27,7 +24,7 @@ namespace ShortenLinks.Models
 
 		public Shortener(string url)
 		{
-			var db = new LiteDatabase("Data/Urls.db");
+			var db = new LiteDatabase("Urls.db");
 			var urls = db.GetCollection<NewUrl>();
 			// While the token exists in our LiteDB we generate a new one
 			// It basically means that if a token already exists we simply generate a new one
@@ -37,7 +34,7 @@ namespace ShortenLinks.Models
 			{
 				Token = Token,
 				URL = url,
-				ShortenedURL = Properties.Resources.ResourceManager.GetString("base_url") + Token
+				ShortenedURL = Token
 			};
 			if (urls.Exists(u => u.URL == url))
 				throw new Exception("URL already exists");
