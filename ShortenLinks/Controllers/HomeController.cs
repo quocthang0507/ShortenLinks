@@ -39,38 +39,40 @@ namespace ShortenLinks.Controllers
 		[HttpPost, Route("/")]
 		public IActionResult PostURL([FromBody] string url)
 		{
-			var db = new LiteDatabase("Urls.db");
-			var urls = db.GetCollection<NewUrl>();
-			try
+			using (var db = new LiteDatabase(ConstantName.DB_NAME))
 			{
-				if (!url.Contains("http"))
-					url = "http://" + url;
-				if (urls.Exists(u => u.ShortenedURL == url))
+				var urls = db.GetCollection<NewUrl>();
+				try
 				{
-					Response.StatusCode = 405;
-					return Json(new URLReponse()
+					if (!url.Contains("http"))
+						url = "http://" + url;
+					if (urls.Exists(u => u.ShortenedURL == url))
 					{
-						Url = url,
-						Status = "Already shortened",
-						Token = null
-					});
+						Response.StatusCode = 405;
+						return Json(new URLReponse()
+						{
+							Url = url,
+							Status = "Already shortened",
+							Token = null
+						});
+					}
+					Shortener shortURL = new Shortener(url);
+					return Json(shortURL.Token);
 				}
-				Shortener shortURL = new Shortener(url);
-				return Json(shortURL.Token);
-			}
-			catch (Exception ex)
-			{
-				if (ex.Message == "URL already exists")
+				catch (Exception ex)
 				{
-					Response.StatusCode = 400;
-					return Json(new URLReponse()
+					if (ex.Message == ConstantName.EXISTED_DB)
 					{
-						Url = url,
-						Status = "URL already exists",
-						Token = urls.Find(u => u.URL == url).FirstOrDefault().Token
-					});
+						Response.StatusCode = 400;
+						return Json(new URLReponse()
+						{
+							Url = url,
+							Status = ConstantName.EXISTED_DB,
+							Token = urls.Find(u => u.URL == url).FirstOrDefault().Token
+						});
+					}
+					throw new Exception(ex.Message);
 				}
-				throw new Exception(ex.Message);
 			}
 		}
 
@@ -78,7 +80,7 @@ namespace ShortenLinks.Controllers
 		public IActionResult NewRedirect([FromRoute] string token)
 		{
 			return Redirect(
-					new LiteDatabase("Urls.db")
+					new LiteDatabase(ConstantName.DB_NAME)
 					.GetCollection<NewUrl>()
 					.FindOne(u => u.Token == token).URL
 				);
