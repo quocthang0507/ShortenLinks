@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace ShortenLinks.Models
 {
+	/// <summary>
+	/// Shortener
+	/// </summary>
 	public class Shortener
 	{
 		private NewUrl biturl;
@@ -37,7 +40,7 @@ namespace ShortenLinks.Models
 				.OrderBy(r => new Random().Next())
 				.ToList()
 				.ForEach(i => urlsafe += Convert.ToChar(i));
-			Token = urlsafe.Substring(new Random().Next(0, urlsafe.Length), new Random().Next(2, 6));
+			Token = urlsafe.Substring(new Random().Next(0, urlsafe.Length), 5);
 			return this;
 		}
 

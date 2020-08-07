@@ -92,10 +92,5 @@ namespace ShortenLinks.Controllers
 			}
 			return result;
 		}
-
-		private string GetBaseUrl()
-		{
-			return $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
-		}
 	}
 }

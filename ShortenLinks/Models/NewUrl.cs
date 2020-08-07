@@ -2,6 +2,9 @@
 
 namespace ShortenLinks.Models
 {
+	/// <summary>
+	/// New URL
+	/// </summary>
 	public class NewUrl
 	{
 		/// <summary>

@@ -1,5 +1,8 @@
 ﻿namespace ShortenLinks.Models
 {
+	/// <summary>
+	/// URL Response
+	/// </summary>
 	public class URLReponse
 	{
 		/// <summary>
