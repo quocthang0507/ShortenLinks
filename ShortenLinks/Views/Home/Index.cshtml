@@ -6,10 +6,10 @@
 	<section class="shortener-form">
 		<h2>Enter your link below and get it shortened, nice and easy.</h2>
 		<div class="input-wrap">
-			<input type="text" name="url" id="urlshort" placeholder="Shorten your URL" /><button id="submit">Shorten</button>
+			<input type="text" name="url" id="urlshort" placeholder="Shorten your URL" />
+			<button id="submit">Shorten</button>
 		</div>
 		<div class="resp-area inactive" id="resp-area">
-
 		</div>
 	</section>
 </div>
@@ -27,7 +27,14 @@
 			}
 		}).then(res => res.json())
 			.then(response => {
+				var a = document.createElement('a');
+				var linkText = document.createTextNode("Link");
+				a.appendChild(linkText);
+				a.title = "Link";
+				a.href = response.token;
+				a.target = "_blank";
+				document.getElementById("resp-area").appendChild(a);
 				console.log(response);
 			});
-		}
+	}
 </script>

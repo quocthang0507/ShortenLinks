@@ -42,48 +42,41 @@ namespace ShortenLinks.Controllers
 			using (var db = new LiteDatabase(ConstantName.DB_NAME))
 			{
 				var urls = db.GetCollection<NewUrl>();
-				try
+				// Kiểm tra có giao thức http trong đó không
+				if (!url.Contains("http"))
+					url = "http://" + url;
+				NewUrl existed;
+				// Kiểm tra trong csdl có bị trùng không
+				if ((existed = urls.FindOne(u => u.URL == url)) != null)
 				{
-					if (!url.Contains("http"))
-						url = "http://" + url;
-					if (urls.Exists(u => u.ShortenedURL == url))
+					Response.StatusCode = 202;
+					return Json(new URLReponse()
 					{
-						Response.StatusCode = 405;
-						return Json(new URLReponse()
-						{
-							Url = url,
-							Status = "Already shortened",
-							Token = null
-						});
-					}
-					Shortener shortURL = new Shortener(url);
-					return Json(shortURL.Token);
+						Url = url,
+						Status = "Have already shortened",
+						Token = existed.Token
+					});
 				}
-				catch (Exception ex)
-				{
-					if (ex.Message == ConstantName.EXISTED_DB)
-					{
-						Response.StatusCode = 400;
-						return Json(new URLReponse()
-						{
-							Url = url,
-							Status = ConstantName.EXISTED_DB,
-							Token = urls.Find(u => u.URL == url).FirstOrDefault().Token
-						});
-					}
-					throw new Exception(ex.Message);
-				}
+				// Nếu không bị trùng thì tạo một url mới
 			}
+			Shortener shortURL = new Shortener(url);
+			Response.StatusCode = 200;
+			return Json(shortURL);
 		}
 
 		[HttpGet, Route("/{token}")]
 		public IActionResult NewRedirect([FromRoute] string token)
 		{
-			return Redirect(
-					new LiteDatabase(ConstantName.DB_NAME)
-					.GetCollection<NewUrl>()
-					.FindOne(u => u.Token == token).URL
-				);
+			using var db = new LiteDatabase(ConstantName.DB_NAME);
+			var urls = db.GetCollection<NewUrl>();
+			NewUrl url;
+			if ((url = urls.FindOne(u => u.Token == token)) != null)
+			{
+				url.Clicked++;
+				urls.Update(url);
+				return Redirect(urls.FindOne(u => u.Token == token).URL);
+			}
+			return View("Error");
 		}
 
 		private string FindRedirect(string url)

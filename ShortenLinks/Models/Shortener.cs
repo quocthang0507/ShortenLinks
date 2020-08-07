@@ -4,12 +4,6 @@ using System.Linq;
 
 namespace ShortenLinks.Models
 {
-	public class ConstantName
-	{
-		public static string DB_NAME = "Urls.db";
-		public static string EXISTED_DB = "URL already exists";
-	}
-
 	public class Shortener
 	{
 		private NewUrl biturl;
@@ -21,8 +15,6 @@ namespace ShortenLinks.Models
 			using (var db = new LiteDatabase(ConstantName.DB_NAME))
 			{
 				var urls = db.GetCollection<NewUrl>();
-				if (urls.Exists(u => u.URL == url))
-					throw new Exception(ConstantName.EXISTED_DB);
 				// Tạo một token duy nhất bằng cách sinh liên tục
 				// Lặp đến khi nào mà token là duy nhất
 				while (urls.Exists(u => u.Token == GenerateToken().Token)) ;
@@ -31,7 +23,7 @@ namespace ShortenLinks.Models
 				{
 					Token = Token,
 					URL = url,
-					ShortenedURL = Token
+					Created = DateTime.Now
 				};
 				urls.Insert(biturl);
 			}
