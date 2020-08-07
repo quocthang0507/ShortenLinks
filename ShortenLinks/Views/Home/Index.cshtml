@@ -4,19 +4,21 @@
 
 <div class="shortener-form-wrap">
 	<section class="shortener-form">
-		<h2>Enter your link below and get it shortened, nice and easy.</h2>
-		<div class="input-wrap">
-			<input type="text" name="url" id="urlshort" placeholder="Shorten your URL" />
-			<button id="submit">Shorten</button>
+		<h3>Enter your link below and get it shortened, nice and easy.</h3>
+		<div class="form-inline">
+			<label for="url" class="mr-sm-2">Email address:</label>
+			<input type="text" class="form-control mb-2 mr-sm-2" name="url" id="url" placeholder="Shorten your URL" />
+			<button type="submit" id="submit" class="btn btn-primary mb-2">Submit</button>
 		</div>
-		<div class="resp-area inactive" id="resp-area">
+		<div class="resp-area" id="resp-area">
 		</div>
 	</section>
 </div>
 
 <script>
 	var submitBtn = document.querySelector("#submit");
-	var urlInput = document.querySelector("#urlshort");
+	var urlInput = document.querySelector("#url");
+
 	submitBtn.onclick = function (ev) {
 		let url = urlInput.value;
 		fetch("/", {
