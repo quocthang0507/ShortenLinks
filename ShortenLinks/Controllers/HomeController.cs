@@ -10,11 +10,8 @@ namespace ShortenLinks.Controllers
 {
 	public class HomeController : Controller
 	{
-		private readonly ILogger<HomeController> _logger;
-
 		public HomeController(ILogger<HomeController> logger)
 		{
-			_logger = logger;
 		}
 
 		public IActionResult Index()
@@ -42,9 +39,9 @@ namespace ShortenLinks.Controllers
 				{
 					return View("Error");
 				}
-				using (var db = new LiteDatabase(Constants.DB_NAME))
+				using (LiteDatabase db = new LiteDatabase(Constants.DB_NAME))
 				{
-					var urls = db.GetCollection<NewUrlModel>();
+					ILiteCollection<NewUrlModel> urls = db.GetCollection<NewUrlModel>();
 					// Kiểm tra
 					if (!Common.isValidUrl(request.URL))
 					{
@@ -70,14 +67,16 @@ namespace ShortenLinks.Controllers
 				return Json(shortURL);
 			}
 			else
+			{
 				return View("Error");
+			}
 		}
 
 		[HttpGet, Route("/{token}")]
 		public IActionResult NewRedirect([FromRoute] string token)
 		{
-			using var db = new LiteDatabase(Constants.DB_NAME);
-			var urls = db.GetCollection<NewUrlModel>();
+			using LiteDatabase db = new LiteDatabase(Constants.DB_NAME);
+			ILiteCollection<NewUrlModel> urls = db.GetCollection<NewUrlModel>();
 			NewUrlModel url;
 			if ((url = urls.FindOne(u => u.Token == token)) != null)
 			{
@@ -93,7 +92,7 @@ namespace ShortenLinks.Controllers
 		{
 			int width = 180, height = 36;
 			var captchaCode = Captcha.GenerateCaptchaCode();
-			var result = Captcha.GenerateCaptchaImage(width, height, captchaCode);
+			CaptchaResultModel result = Captcha.GenerateCaptchaImage(width, height, captchaCode);
 			HttpContext.Session.SetString(Constants.CAPT_SESSION, result.CaptchaCode);
 			Stream stream = new MemoryStream(result.CaptchaByteData);
 			return new FileStreamResult(stream, "image/png");

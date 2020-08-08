@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Urls.db" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LiteDB" Version="5.0.9" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
   </ItemGroup>

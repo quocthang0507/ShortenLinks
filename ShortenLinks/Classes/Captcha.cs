@@ -21,171 +21,177 @@ namespace ShortenLinks.Classes
 		{
 			var validCaptcha = context.Session.GetString(Constants.CAPT_SESSION);
 			var isValid = userInput == validCaptcha;
-			if (isValid) context.Session.Remove(Constants.CAPT_SESSION);
+			if (isValid)
+			{
+				context.Session.Remove(Constants.CAPT_SESSION);
+			}
+
 			return isValid;
 		}
 
 		public static CaptchaResultModel GenerateCaptchaImage(int width, int height, string captchaCode)
 		{
-			using (Bitmap baseMap = new Bitmap(width, height))
-			using (Graphics graph = Graphics.FromImage(baseMap))
+			using Bitmap baseMap = new Bitmap(width, height);
+			using Graphics graph = Graphics.FromImage(baseMap);
+			Random rand = new Random();
+
+			graph.Clear(GetRandomLightColor());
+
+			DrawCaptchaCode();
+			DrawDisorderLine();
+			AdjustRippleEffect();
+
+			MemoryStream ms = new MemoryStream();
+
+			baseMap.Save(ms, ImageFormat.Png);
+
+			return new CaptchaResultModel { CaptchaCode = captchaCode, CaptchaByteData = ms.ToArray(), Timestamp = DateTime.Now };
+
+			static int GetFontSize(int imageWidth, int captchCodeCount)
 			{
-				Random rand = new Random();
+				var averageSize = imageWidth / captchCodeCount;
 
-				graph.Clear(GetRandomLightColor());
+				return Convert.ToInt32(averageSize);
+			}
 
-				DrawCaptchaCode();
-				DrawDisorderLine();
-				AdjustRippleEffect();
+			Color GetRandomDeepColor()
+			{
+				int redlow = 160, greenLow = 100, blueLow = 160;
+				return Color.FromArgb(rand.Next(redlow), rand.Next(greenLow), rand.Next(blueLow));
+			}
 
-				MemoryStream ms = new MemoryStream();
+			Color GetRandomLightColor()
+			{
+				int low = 180, high = 255;
 
-				baseMap.Save(ms, ImageFormat.Png);
+				int nRend = rand.Next(high) % (high - low) + low;
+				int nGreen = rand.Next(high) % (high - low) + low;
+				int nBlue = rand.Next(high) % (high - low) + low;
 
-				return new CaptchaResultModel { CaptchaCode = captchaCode, CaptchaByteData = ms.ToArray(), Timestamp = DateTime.Now };
+				return Color.FromArgb(nRend, nGreen, nBlue);
+			}
 
-				int GetFontSize(int imageWidth, int captchCodeCount)
+			void DrawCaptchaCode()
+			{
+				SolidBrush fontBrush = new SolidBrush(Color.Black);
+				int fontSize = GetFontSize(width, captchaCode.Length);
+				Font font = new Font(FontFamily.GenericSerif, fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
+				for (int i = 0; i < captchaCode.Length; i++)
 				{
-					var averageSize = imageWidth / captchCodeCount;
+					fontBrush.Color = GetRandomDeepColor();
 
-					return Convert.ToInt32(averageSize);
-				}
+					int shiftPx = fontSize / 6;
 
-				Color GetRandomDeepColor()
-				{
-					int redlow = 160, greenLow = 100, blueLow = 160;
-					return Color.FromArgb(rand.Next(redlow), rand.Next(greenLow), rand.Next(blueLow));
-				}
-
-				Color GetRandomLightColor()
-				{
-					int low = 180, high = 255;
-
-					int nRend = rand.Next(high) % (high - low) + low;
-					int nGreen = rand.Next(high) % (high - low) + low;
-					int nBlue = rand.Next(high) % (high - low) + low;
-
-					return Color.FromArgb(nRend, nGreen, nBlue);
-				}
-
-				void DrawCaptchaCode()
-				{
-					SolidBrush fontBrush = new SolidBrush(Color.Black);
-					int fontSize = GetFontSize(width, captchaCode.Length);
-					Font font = new Font(FontFamily.GenericSerif, fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-					for (int i = 0; i < captchaCode.Length; i++)
+					float x = i * fontSize + rand.Next(-shiftPx, shiftPx) + rand.Next(-shiftPx, shiftPx);
+					int maxY = height - fontSize;
+					if (maxY < 0)
 					{
-						fontBrush.Color = GetRandomDeepColor();
-
-						int shiftPx = fontSize / 6;
-
-						float x = i * fontSize + rand.Next(-shiftPx, shiftPx) + rand.Next(-shiftPx, shiftPx);
-						int maxY = height - fontSize;
-						if (maxY < 0) maxY = 0;
-						float y = rand.Next(0, maxY);
-
-						graph.DrawString(captchaCode[i].ToString(), font, fontBrush, x, y);
+						maxY = 0;
 					}
+
+					float y = rand.Next(0, maxY);
+
+					graph.DrawString(captchaCode[i].ToString(), font, fontBrush, x, y);
 				}
+			}
 
-				//Vẽ các đường làm rối
-				void DrawDisorderLine()
+			//Vẽ các đường làm rối
+			void DrawDisorderLine()
+			{
+				Pen linePen = new Pen(new SolidBrush(Color.Black), 3);
+				for (int i = 0; i < rand.Next(3, 5); i++)
 				{
-					Pen linePen = new Pen(new SolidBrush(Color.Black), 3);
-					for (int i = 0; i < rand.Next(3, 5); i++)
-					{
-						linePen.Color = GetRandomDeepColor();
+					linePen.Color = GetRandomDeepColor();
 
-						Point startPoint = new Point(rand.Next(0, width), rand.Next(0, height));
-						Point endPoint = new Point(rand.Next(0, width), rand.Next(0, height));
-						graph.DrawLine(linePen, startPoint, endPoint);
-					}
+					Point startPoint = new Point(rand.Next(0, width), rand.Next(0, height));
+					Point endPoint = new Point(rand.Next(0, width), rand.Next(0, height));
+					graph.DrawLine(linePen, startPoint, endPoint);
 				}
+			}
 
-				//Hiệu ứng gợn sóng
-				void AdjustRippleEffect()
+			//Hiệu ứng gợn sóng
+			void AdjustRippleEffect()
+			{
+				short nWave = 5;
+				int nWidth = baseMap.Width;
+				int nHeight = baseMap.Height;
+
+				Point[,] pt = new Point[nWidth, nHeight];
+
+				for (int x = 0; x < nWidth; ++x)
 				{
-					short nWave = 5;
-					int nWidth = baseMap.Width;
-					int nHeight = baseMap.Height;
-
-					Point[,] pt = new Point[nWidth, nHeight];
-
-					for (int x = 0; x < nWidth; ++x)
+					for (int y = 0; y < nHeight; ++y)
 					{
-						for (int y = 0; y < nHeight; ++y)
+						var xo = nWave * Math.Sin(2.0 * 3.1415 * y / 128.0);
+						var yo = nWave * Math.Cos(2.0 * 3.1415 * x / 128.0);
+
+						var newX = x + xo;
+						var newY = y + yo;
+
+						if (newX > 0 && newX < nWidth)
 						{
-							var xo = nWave * Math.Sin(2.0 * 3.1415 * y / 128.0);
-							var yo = nWave * Math.Cos(2.0 * 3.1415 * x / 128.0);
-
-							var newX = x + xo;
-							var newY = y + yo;
-
-							if (newX > 0 && newX < nWidth)
-							{
-								pt[x, y].X = (int)newX;
-							}
-							else
-							{
-								pt[x, y].X = 0;
-							}
+							pt[x, y].X = (int)newX;
+						}
+						else
+						{
+							pt[x, y].X = 0;
+						}
 
 
-							if (newY > 0 && newY < nHeight)
-							{
-								pt[x, y].Y = (int)newY;
-							}
-							else
-							{
-								pt[x, y].Y = 0;
-							}
+						if (newY > 0 && newY < nHeight)
+						{
+							pt[x, y].Y = (int)newY;
+						}
+						else
+						{
+							pt[x, y].Y = 0;
 						}
 					}
+				}
 
-					Bitmap bSrc = (Bitmap)baseMap.Clone();
+				Bitmap bSrc = (Bitmap)baseMap.Clone();
 
-					BitmapData bitmapData = baseMap.LockBits(new Rectangle(0, 0, baseMap.Width, baseMap.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-					BitmapData bmSrc = bSrc.LockBits(new Rectangle(0, 0, bSrc.Width, bSrc.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+				BitmapData bitmapData = baseMap.LockBits(new Rectangle(0, 0, baseMap.Width, baseMap.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+				BitmapData bmSrc = bSrc.LockBits(new Rectangle(0, 0, bSrc.Width, bSrc.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-					int scanline = bitmapData.Stride;
+				int scanline = bitmapData.Stride;
 
-					IntPtr scan0 = bitmapData.Scan0;
-					IntPtr srcScan0 = bmSrc.Scan0;
+				IntPtr scan0 = bitmapData.Scan0;
+				IntPtr srcScan0 = bmSrc.Scan0;
 
-					unsafe
+				unsafe
+				{
+					byte* p = (byte*)(void*)scan0;
+					byte* pSrc = (byte*)(void*)srcScan0;
+
+					int nOffset = bitmapData.Stride - baseMap.Width * 3;
+
+					for (int y = 0; y < nHeight; ++y)
 					{
-						byte* p = (byte*)(void*)scan0;
-						byte* pSrc = (byte*)(void*)srcScan0;
-
-						int nOffset = bitmapData.Stride - baseMap.Width * 3;
-
-						for (int y = 0; y < nHeight; ++y)
+						for (int x = 0; x < nWidth; ++x)
 						{
-							for (int x = 0; x < nWidth; ++x)
-							{
-								var xOffset = pt[x, y].X;
-								var yOffset = pt[x, y].Y;
+							var xOffset = pt[x, y].X;
+							var yOffset = pt[x, y].Y;
 
-								if (yOffset >= 0 && yOffset < nHeight && xOffset >= 0 && xOffset < nWidth)
+							if (yOffset >= 0 && yOffset < nHeight && xOffset >= 0 && xOffset < nWidth)
+							{
+								if (pSrc != null)
 								{
-									if (pSrc != null)
-									{
-										p[0] = pSrc[yOffset * scanline + xOffset * 3];
-										p[1] = pSrc[yOffset * scanline + xOffset * 3 + 1];
-										p[2] = pSrc[yOffset * scanline + xOffset * 3 + 2];
-									}
+									p[0] = pSrc[yOffset * scanline + xOffset * 3];
+									p[1] = pSrc[yOffset * scanline + xOffset * 3 + 1];
+									p[2] = pSrc[yOffset * scanline + xOffset * 3 + 2];
 								}
-
-								p += 3;
 							}
-							p += nOffset;
-						}
-					}
 
-					baseMap.UnlockBits(bitmapData);
-					bSrc.UnlockBits(bmSrc);
-					bSrc.Dispose();
+							p += 3;
+						}
+						p += nOffset;
+					}
 				}
+
+				baseMap.UnlockBits(bitmapData);
+				bSrc.UnlockBits(bmSrc);
+				bSrc.Dispose();
 			}
 
 		}
