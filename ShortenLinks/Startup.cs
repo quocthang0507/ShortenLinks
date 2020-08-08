@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 
 namespace ShortenLinks
 {
@@ -19,6 +20,11 @@ namespace ShortenLinks
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddControllersWithViews();
+
+			services.AddSession(options => {
+				options.IdleTimeout = TimeSpan.FromMinutes(20);
+				options.Cookie.HttpOnly = true;
+			});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -32,18 +38,21 @@ namespace ShortenLinks
 			{
 				app.UseExceptionHandler("/Home/Error");
 			}
+			app.UseSession();
+
 			app.UseStaticFiles();
 
 			app.UseRouting();
 
 			app.UseAuthorization();
 
-			app.UseEndpoints(endpoints =>
-			{
+			app.UseEndpoints(endpoints => {
 				endpoints.MapControllerRoute(
 					name: "default",
 					pattern: "{controller=Home}/{action=Index}/{id?}");
 			});
+
+
 		}
 	}
 }

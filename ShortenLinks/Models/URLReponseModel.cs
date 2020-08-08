@@ -3,7 +3,7 @@
 	/// <summary>
 	/// URL Response
 	/// </summary>
-	public class URLReponse
+	public class URLReponseModel
 	{
 		/// <summary>
 		/// URL ban đầu

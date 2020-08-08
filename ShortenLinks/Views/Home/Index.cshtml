@@ -3,28 +3,41 @@
 }
 
 <h3>Enter your link below and get it shortened, nice and easy.</h3>
-<div class="form-inline">
-	<label for="url" class="mr-sm-2">Your URL:</label>
-	<input type="text" class="form-control mb-2 mr-sm-2" name="url" id="url" placeholder="example.com" style="width:300px;" />
-</div>
-<button type="button" id="submit" value="Submit" class="btn btn-primary">Submit</button>
+<div class="container">
+	<div class="form-group">
+		<label for="url" class="mr-sm-2">Your URL:</label>
+		<input type="text" class="form-control mb-2 mr-sm-2" name="url" id="url" placeholder="example.com" />
+	</div>
+	<div class="form-group">
+		<img id="img-captcha" src="~/getCaptcha" alt="captcha image" class="mr-sm-2" />
+		<button id="changeCap" onclick="changeCaptchaImage();" class="btn btn-light">&#9850;</button>
+		<input id="captcha" type="text" class="form-control mb-2 mr-sm-2" placeholder="Captcha code" maxlength="@ShortenLinks.Classes.Constants.TOKEN_LENGTH" />
+		<small class="form-text text-muted">Note: Captcha range A-Z1-9</small>
+	</div>
+	<button type="button" id="submit" value="Submit" class="btn btn-primary">Submit</button>
 
-<div class="resp-area" id="resp-area">
-	<h5>Here your short links: </h5>
-	<ul class="list-group" id="results">
-	</ul>
+	<div class="resp-area" id="resp-area">
+		<h5>Here your short links: </h5>
+		<ul class="list-group" id="results">
+		</ul>
+	</div>
 </div>
 
 @section scripts{
 	<script type="text/javascript">
 		var submitBtn = document.querySelector("#submit");
 		var urlInput = document.querySelector("#url");
-
+		var inputCaptcha = document.querySelector("#captcha");
 		submitBtn.onclick = function (ev) {
 			let url = urlInput.value;
+			let captcha = inputCaptcha.value;
+			let data = {
+				URL: url,
+				CaptchaCode: captcha
+			}
 			fetch("/", {
 				method: "POST",
-				body: JSON.stringify(url),
+				body: JSON.stringify(data),
 				headers: {
 					'Content-Type': 'application/json'
 				}
@@ -37,7 +50,7 @@
 					document.getElementById("results").appendChild(li);
 				})
 				.catch((error) => {
-					var p = createCommonTag('P', 'Error');
+					var p = createCommonTag('P', 'Error', 'color: Red');
 					var li = createListItem(p);
 					document.getElementById("results").appendChild(li);
 				});
@@ -53,8 +66,9 @@
 			return a;
 		};
 
-		function createCommonTag(tag, text) {
+		function createCommonTag(tag, text, css) {
 			var t = document.createElement(tag);
+			t.style.cssText = css;
 			t.innerHTML = text;
 			return t;
 		}
@@ -67,5 +81,10 @@
 			});
 			return li;
 		};
+
+		function changeCaptchaImage() {
+			var d = new Date();
+			$("#img-captcha").attr("src", "/getCaptcha?" + d.getTime());
+		}
 	</script>
 }

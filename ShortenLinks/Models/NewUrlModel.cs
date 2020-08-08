@@ -5,7 +5,7 @@ namespace ShortenLinks.Models
 	/// <summary>
 	/// New URL
 	/// </summary>
-	public class NewUrl
+	public class NewUrlModel
 	{
 		/// <summary>
 		/// ID

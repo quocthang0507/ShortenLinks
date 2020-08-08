@@ -1,9 +1,6 @@
 ﻿using LiteDB;
 using ShortenLinks.Models;
 using System;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace ShortenLinks.Classes
 {
@@ -12,7 +9,7 @@ namespace ShortenLinks.Classes
 	/// </summary>
 	public class Shortener
 	{
-		private NewUrl biturl;
+		private NewUrlModel biturl;
 
 		public string Token { get; set; }
 
@@ -20,12 +17,12 @@ namespace ShortenLinks.Classes
 		{
 			using (var db = new LiteDatabase(Constants.DB_NAME))
 			{
-				var urls = db.GetCollection<NewUrl>();
+				var urls = db.GetCollection<NewUrlModel>();
 				// Tạo một token duy nhất bằng cách sinh liên tục
 				// Lặp đến khi nào mà token là duy nhất
 				while (true)
 				{
-					string token = GenerateToken;
+					string token = Common.GenerateToken(Constants.TOKEN_PATTERN);
 					var existed = urls.FindOne(url => url.Token == token);
 					if (existed == null)
 					{
@@ -34,7 +31,7 @@ namespace ShortenLinks.Classes
 					}
 				}
 				// Store the values in the NixURL model
-				biturl = new NewUrl()
+				biturl = new NewUrlModel()
 				{
 					Token = Token,
 					URL = url,
@@ -43,28 +40,5 @@ namespace ShortenLinks.Classes
 				urls.Insert(biturl);
 			}
 		}
-
-		/// <summary>
-		/// From https://stackoverflow.com/a/1344255
-		/// </summary>
-		/// <returns></returns>
-		public string GenerateToken
-		{
-			get
-			{
-				byte[] data = new byte[Constants.TOKEN_LENGTH];
-				using (RNGCryptoServiceProvider crypto = new RNGCryptoServiceProvider())
-				{
-					crypto.GetBytes(data);
-				}
-				StringBuilder result = new StringBuilder(Constants.TOKEN_LENGTH);
-				foreach (byte b in data)
-				{
-					result.Append(Constants.TOKEN_PATTERN[b % (Constants.TOKEN_PATTERN.Length)]);
-				}
-				return result.ToString();
-			}
-		}
-
 	}
 }

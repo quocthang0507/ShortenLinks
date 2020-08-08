@@ -1,9 +1,10 @@
 ﻿using LiteDB;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ShortenLinks.Classes;
 using ShortenLinks.Models;
-using System.Net.Http;
+using System.IO;
 
 namespace ShortenLinks.Controllers
 {
@@ -33,42 +34,51 @@ namespace ShortenLinks.Controllers
 		}
 
 		[HttpPost, Route("/")]
-		public IActionResult PostURL([FromBody] string url)
+		public IActionResult PostURL([FromBody] URLRequestModel request)
 		{
-			using (var db = new LiteDatabase(Constants.DB_NAME))
+			if (ModelState.IsValid)
 			{
-				var urls = db.GetCollection<NewUrl>();
-				// Kiểm tra
-				if (!Common.isValidUrl(url))
+				if (!Captcha.ValidateCaptchaCode(request.CaptchaCode, HttpContext))
 				{
-					Response.StatusCode = 400;
 					return View("Error");
 				}
-				NewUrl existed;
-				// Kiểm tra trong csdl có bị trùng không
-				if ((existed = urls.FindOne(u => u.URL == url)) != null)
+				using (var db = new LiteDatabase(Constants.DB_NAME))
 				{
-					Response.StatusCode = 202;
-					return Json(new URLReponse()
+					var urls = db.GetCollection<NewUrlModel>();
+					// Kiểm tra
+					if (!Common.isValidUrl(request.URL))
 					{
-						Url = url,
-						Status = "Have already shortened",
-						Token = existed.Token
-					});
+						Response.StatusCode = 400;
+						return View("Error");
+					}
+					NewUrlModel existed;
+					// Kiểm tra trong csdl có bị trùng không
+					if ((existed = urls.FindOne(u => u.URL == request.URL)) != null)
+					{
+						Response.StatusCode = 202;
+						return Json(new URLReponseModel()
+						{
+							Url = request.URL,
+							Status = "Have already shortened",
+							Token = existed.Token
+						});
+					}
+					// Nếu không bị trùng thì tạo một url mới
 				}
-				// Nếu không bị trùng thì tạo một url mới
+				Shortener shortURL = new Shortener(request.URL);
+				Response.StatusCode = 200;
+				return Json(shortURL);
 			}
-			Shortener shortURL = new Shortener(url);
-			Response.StatusCode = 200;
-			return Json(shortURL);
+			else
+				return View("Error");
 		}
 
 		[HttpGet, Route("/{token}")]
 		public IActionResult NewRedirect([FromRoute] string token)
 		{
 			using var db = new LiteDatabase(Constants.DB_NAME);
-			var urls = db.GetCollection<NewUrl>();
-			NewUrl url;
+			var urls = db.GetCollection<NewUrlModel>();
+			NewUrlModel url;
 			if ((url = urls.FindOne(u => u.Token == token)) != null)
 			{
 				url.Clicked++;
@@ -78,18 +88,15 @@ namespace ShortenLinks.Controllers
 			return View("Error");
 		}
 
-		private string FindRedirect(string url)
+		[Route("getCaptcha")]
+		public IActionResult GetCaptchaImage()
 		{
-			string result = string.Empty;
-			using (var client = new HttpClient())
-			{
-				var response = client.GetAsync(url).Result;
-				if (response.IsSuccessStatusCode)
-				{
-					result = response.Headers.Location.ToString();
-				}
-			}
-			return result;
+			int width = 180, height = 36;
+			var captchaCode = Captcha.GenerateCaptchaCode();
+			var result = Captcha.GenerateCaptchaImage(width, height, captchaCode);
+			HttpContext.Session.SetString(Constants.CAPT_SESSION, result.CaptchaCode);
+			Stream stream = new MemoryStream(result.CaptchaByteData);
+			return new FileStreamResult(stream, "image/png");
 		}
 	}
 }
