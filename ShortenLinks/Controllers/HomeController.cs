@@ -1,13 +1,9 @@
 ﻿using LiteDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ShortenLinks.Classes;
 using ShortenLinks.Models;
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
-using System.Resources;
 
 namespace ShortenLinks.Controllers
 {
@@ -39,12 +35,15 @@ namespace ShortenLinks.Controllers
 		[HttpPost, Route("/")]
 		public IActionResult PostURL([FromBody] string url)
 		{
-			using (var db = new LiteDatabase(ConstantName.DB_NAME))
+			using (var db = new LiteDatabase(Constants.DB_NAME))
 			{
 				var urls = db.GetCollection<NewUrl>();
-				// Kiểm tra có giao thức http trong đó không
-				if (!url.Contains("http"))
-					url = "http://" + url;
+				// Kiểm tra
+				if (!Common.isValidUrl(url))
+				{
+					Response.StatusCode = 400;
+					return View("Error");
+				}
 				NewUrl existed;
 				// Kiểm tra trong csdl có bị trùng không
 				if ((existed = urls.FindOne(u => u.URL == url)) != null)
@@ -67,7 +66,7 @@ namespace ShortenLinks.Controllers
 		[HttpGet, Route("/{token}")]
 		public IActionResult NewRedirect([FromRoute] string token)
 		{
-			using var db = new LiteDatabase(ConstantName.DB_NAME);
+			using var db = new LiteDatabase(Constants.DB_NAME);
 			var urls = db.GetCollection<NewUrl>();
 			NewUrl url;
 			if ((url = urls.FindOne(u => u.Token == token)) != null)

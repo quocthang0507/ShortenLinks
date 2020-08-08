@@ -2,41 +2,70 @@
 	ViewData["Title"] = "Home Page";
 }
 
-<div class="shortener-form-wrap">
-	<section class="shortener-form">
-		<h3>Enter your link below and get it shortened, nice and easy.</h3>
-		<div class="form-inline">
-			<label for="url" class="mr-sm-2">Email address:</label>
-			<input type="text" class="form-control mb-2 mr-sm-2" name="url" id="url" placeholder="Shorten your URL" />
-			<button type="submit" id="submit" class="btn btn-primary mb-2">Submit</button>
-		</div>
-		<div class="resp-area" id="resp-area">
-		</div>
-	</section>
+<h3>Enter your link below and get it shortened, nice and easy.</h3>
+<div class="form-inline">
+	<label for="url" class="mr-sm-2">Your URL:</label>
+	<input type="text" class="form-control mb-2 mr-sm-2" name="url" id="url" placeholder="example.com" style="width:300px;" />
+</div>
+<button type="button" id="submit" value="Submit" class="btn btn-primary">Submit</button>
+
+<div class="resp-area" id="resp-area">
+	<h5>Here your short links: </h5>
+	<ul class="list-group" id="results">
+	</ul>
 </div>
 
-<script>
-	var submitBtn = document.querySelector("#submit");
-	var urlInput = document.querySelector("#url");
+@section scripts{
+	<script type="text/javascript">
+		var submitBtn = document.querySelector("#submit");
+		var urlInput = document.querySelector("#url");
 
-	submitBtn.onclick = function (ev) {
-		let url = urlInput.value;
-		fetch("/", {
-			method: "POST",
-			body: JSON.stringify(url),
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		}).then(res => res.json())
-			.then(response => {
-				var a = document.createElement('a');
-				var linkText = document.createTextNode("Link");
-				a.appendChild(linkText);
-				a.title = "Link";
-				a.href = response.token;
-				a.target = "_blank";
-				document.getElementById("resp-area").appendChild(a);
-				console.log(response);
+		submitBtn.onclick = function (ev) {
+			let url = urlInput.value;
+			fetch("/", {
+				method: "POST",
+				body: JSON.stringify(url),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			}).then(res => res.json())
+				.then(response => {
+					console.log(response);
+					var a = createLinkTag(response.token);
+					var p = createCommonTag("P", url);
+					var li = createListItem(p, a);
+					document.getElementById("results").appendChild(li);
+				})
+				.catch((error) => {
+					var p = createCommonTag('P', 'Error');
+					var li = createListItem(p);
+					document.getElementById("results").appendChild(li);
+				});
+		};
+
+		function createLinkTag(token) {
+			var a = document.createElement('a');
+			var url = window.location.host + "/" + token;
+			var linkText = document.createTextNode(url);
+			a.appendChild(linkText);
+			a.href = token;
+			a.target = "_blank";
+			return a;
+		};
+
+		function createCommonTag(tag, text) {
+			var t = document.createElement(tag);
+			t.innerHTML = text;
+			return t;
+		}
+
+		function createListItem(...args) {
+			var li = document.createElement('li');
+			li.className = "list-group-item list-group-item-action";
+			args.forEach(agr => {
+				li.appendChild(agr);
 			});
-	}
-</script>
+			return li;
+		};
+	</script>
+}
